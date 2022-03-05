@@ -6,13 +6,12 @@ projectName = 'hiredis'
 # smsdk_ext.cpp will be automatically added later
 sourceFiles = [
   'extension.cpp',
-  'adlist.c',
-  'ae.c',
-  'ae_wsiocp.c',
+  'client.cpp',
+  'reply.cpp',
   'ASyncRedis.cpp',
   'natives.cpp',
   'SMASyncRedis.cpp',
-  'win32fixes.c'
+  'win32fixes.c',
 ]
 
 ###############
