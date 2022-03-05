@@ -42,18 +42,18 @@ jobs:
           path: sourcemod
           submodules: recursive
 
-      - name: Checkout AMBuild
-        uses: actions/checkout@v2
-        with:
-          repository: alliedmodders/ambuild
-          path: ambuild
-
       - name: Checkout hiredis
         uses: actions/checkout@v2
         with:
           repository: redis/hiredis
           path: hiredis
-
+      
+      - name: Checkout AMBuild
+        uses: actions/checkout@v2
+        with:
+          repository: alliedmodders/ambuild
+          path: ambuild
+      
       - name: Install AMBuild
         uses: BSFishy/pip-action@v1
         with:
