@@ -40,7 +40,7 @@
 #include "SMASyncRedis.h"
 #include "concurrentqueue.h"
 
-#include <hiredis/hiredis.h>
+#include <hiredis.h>
 
 #include "smsdk_ext.h"
 

@@ -1,8 +1,12 @@
 #include "reply.h"
 
-#include <hiredis/hiredis.h>
+#include <hiredis.h>
 
+
+#ifdef PLATFORM_WINDOWS
 #include <windows.h>
+#else
+#endif
 
 namespace async_redis
 {
