@@ -9,7 +9,7 @@ extern "C" {
 #endif
 }
 
-#include <hiredis.h>
+#include <hiredis/hiredis.h>
 
 #include <sstream>
 #include <chrono>
