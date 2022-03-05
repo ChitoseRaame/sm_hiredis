@@ -64,7 +64,7 @@ jobs:
         shell: bash
         run: |
           mkdir build && cd build
-          python ../configure.py --enable-optimize --targets=${{ matrix.target-archs }}
+          python ../configure.py --enable-optimize
           ambuild
 
       - name: Upload artifact
