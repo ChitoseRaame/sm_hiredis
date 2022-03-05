@@ -33,6 +33,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: extension
+          submodules: recursive
 
       - name: Checkout SourceMod
         uses: actions/checkout@v2
@@ -41,12 +42,6 @@ jobs:
           ref: ${{ matrix.sourcemod-version }}
           path: sourcemod
           submodules: recursive
-
-      - name: Checkout hiredis
-        uses: actions/checkout@v2
-        with:
-          repository: redis/hiredis
-          path: hiredis
       
       - name: Checkout AMBuild
         uses: actions/checkout@v2
