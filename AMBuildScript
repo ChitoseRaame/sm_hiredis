@@ -401,7 +401,7 @@ class ExtensionConfig(object):
     return self.ConfigureForHL2(binary, sdk)
 
 Extension = ExtensionConfig()
-Extension.detectSDKs()
+Extension.detectSourceMod()
 Extension.configure()
 
 # Add additional buildscripts here
