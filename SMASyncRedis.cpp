@@ -1,5 +1,6 @@
 #include "SMASyncRedis.h"
 #include "extension.h"
+#include <stdexcept>
 
 static inline redisReply *CopyReply(redisReply *src)
 {
