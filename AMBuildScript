@@ -96,14 +96,26 @@ class ExtensionConfig(object):
     self.sm_root = Normalize(self.sm_root)
 
   def configure(self):
-    cxx = builder.DetectCompilers()
+    for cxx in self.all_targets:
+        self.configure_cxx(cxx)
+
+  def configure_cxx(self, cxx):
+    if cxx.family == 'msvc':
+      if cxx.version < 1900:
+        raise Exception('MSVC 2015 or later is required.')
+    elif cxx.family == 'gcc':
+      if cxx.version < 'gcc-4.9':
+        raise Exception('GCC 4.9 or later is required.')
+    elif cxx.family == 'clang':
+      if cxx.version < 'clang-3.4':
+        raise Exception('Clang 3.4 or later is required.')
 
     if cxx.like('gcc'):
       self.configure_gcc(cxx)
-    elif cxx.vendor == 'msvc':
+    elif cxx.family == 'msvc':
       self.configure_msvc(cxx)
 
-    # Optimizaiton
+    # Optimization
     if builder.options.opt == '1':
       cxx.defines += ['NDEBUG']
 
@@ -112,17 +124,18 @@ class ExtensionConfig(object):
       cxx.defines += ['DEBUG', '_DEBUG']
 
     # Platform-specifics
-    if builder.target_platform == 'linux':
+    if cxx.target.platform == 'linux':
       self.configure_linux(cxx)
-    elif builder.target_platform == 'mac':
+    elif cxx.target.platform == 'mac':
       self.configure_mac(cxx)
-    elif builder.target_platform == 'windows':
+    elif cxx.target.platform == 'windows':
       self.configure_windows(cxx)
 
     # Finish up.
     cxx.includes += [
       os.path.join(self.sm_root, 'public'),
     ]
+
 
   def configure_gcc(self, cxx):
     cxx.defines += [
