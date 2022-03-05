@@ -1,6 +1,6 @@
 #include "reply.h"
 
-#include <hiredis>
+#include <hiredis.h>
 
 
 #ifdef PLATFORM_WINDOWS
