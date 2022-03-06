@@ -9,16 +9,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-2019]
+        os: [ubuntu-latest]
         sourcemod-version: [master]
         include:
           - os: ubuntu-latest
             target-archs: x86
-            compiler_cc: clang
-            compiler_cxx: clang++
-          - os: windows-2019
-            target-archs: x86
-            compiler_cc: msvc
 
     steps:
       - name: Install Linux packages
@@ -28,10 +23,7 @@ jobs:
           sudo apt update
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            gcc-multilib g++-multilib libstdc++6 lib32stdc++6 \
-            libc6-dev libc6-dev-i386 linux-libc-dev \
-            linux-libc-dev:i386 lib32z1-dev ${{ matrix.compiler_cc }}
+          sudo apt-get install -y --no-install-recommends gcc-multilib g++-multilib 
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -70,7 +62,6 @@ jobs:
         run: |
           mkdir build && cd build
           cmake .. && make
-          ls
         
       - name: Build
         working-directory: extension
