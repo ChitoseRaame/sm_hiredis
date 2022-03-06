@@ -64,9 +64,12 @@ jobs:
       - name: Build hiredis
         working-directory: extension/hiredis
         shell: bash
+        env: 
+          CFLAGS: -Werror -m32
+          CXXFLAGS: -Werror -m32
         run: |
           mkdir build && cd build
-          cmake -m32 ../
+          cmake ../
         
       - name: Build
         working-directory: extension
