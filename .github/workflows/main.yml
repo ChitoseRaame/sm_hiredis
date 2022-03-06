@@ -14,9 +14,11 @@ jobs:
         include:
           - os: ubuntu-latest
             target-archs: x86
-            
+            compiler_cc: clang
+            compiler_cxx: clang++
           - os: windows-2019
             target-archs: x86
+            compiler_cc: msvc
 
     steps:
       - name: Install Linux packages
@@ -24,7 +26,12 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt update
-          sudo apt install -yq --no-install-recommends g++-multilib gcc-multilib
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc-multilib g++-multilib libstdc++6 lib32stdc++6 \
+            libc6-dev libc6-dev-i386 linux-libc-dev \
+            linux-libc-dev:i386 lib32z1-dev ${{ matrix.compiler_cc }}
 
       - name: Set up Python
         uses: actions/setup-python@v2
