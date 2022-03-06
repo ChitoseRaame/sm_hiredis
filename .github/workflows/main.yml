@@ -69,7 +69,7 @@ jobs:
           CXXFLAGS: -Werror -m32
         run: |
           mkdir build && cd build
-          cmake ../
+          cmake .. && make
           ls
         
       - name: Build
