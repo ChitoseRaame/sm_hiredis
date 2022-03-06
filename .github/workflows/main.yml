@@ -58,8 +58,8 @@ jobs:
         working-directory: extension/hiredis
         shell: bash
         run: |
-          make
-          make install
+          sudo make
+          sudo make install
         
       - name: Build
         working-directory: extension
