@@ -28,6 +28,7 @@ for cxx in builder.targets:
     binary.compiler.cxxflags += ['/GR-']
 
   binary.compiler.postlink += [
+    os.path.join(builder.sourcePath, 'hiredis','libhiredis.so'),
   ]
 
   if binary.compiler.target.platform == 'linux':
