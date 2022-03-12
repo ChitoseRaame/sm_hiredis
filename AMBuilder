@@ -7,10 +7,6 @@ for cxx in builder.targets:
 
   binary.sources += [
     'extension.cpp',
-    'client.cpp',
-    'natives.cpp',
-    'reply.cpp',
-    'SMASyncRedis.cpp',
     os.path.join(Extension.sm_root, 'public', 'smsdk_ext.cpp'),
   ]
 
