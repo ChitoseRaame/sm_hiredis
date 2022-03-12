@@ -8,7 +8,7 @@
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License, version 3.0, as published by the
  * Free Software Foundation.
- *
+ * 
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
@@ -30,108 +30,82 @@
  */
 
 #include "extension.h"
+#include <hiredis/hiredis.h>
 
- /**
-  * @file extension.cpp
-  * @brief Implement extension code here.
-  */
+/**
+ * @file extension.cpp
+ * @brief Implement extension code here.
+ */
 
-class RedisContextTypeHandler : public IHandleTypeDispatch
-{
-public:
-    void OnHandleDestroy(HandleType_t type, void *object)
-    {
-        if (object) {
-            delete (RedisConnect *)object;
-        }
-    }
+redisContext* connect = new redisContext();
+redisReply* reply = new redisReply();
+
+bool Connect(const char* ip, int port) {
+	connect = redisConnect(ip, port);
+	if (connect != NULL && connect->err) {
+		return false;
+	}
+	return true;
+}
+
+bool isConnect() {
+	return connect != NULL && !connect->err;
+}
+
+char* Get(const char* key) {
+	reply = (redisReply*)redisCommand(connect, "get '%s'", key);
+	char* str = reply->str;
+	freeReplyObject(reply);
+	return str;
+}
+
+void* Set(const char* key, const char* value) {
+	redisCommand(connect, "set '%s' '%s'", key, value);
+}
+
+void* Del(const char* key) {
+	redisCommand(connect, "del '%s'", key);
+}
+
+//Start
+
+Sample g_Sample;		/**< Global singleton for extension's main interface */
+
+SMEXT_LINK(&g_Sample);
+
+cell_t Redis_Connect(IPluginContext* pContext, const cell_t* params) {
+	return Connect(const_cast<char*>(reinterpret_cast<char*>(params[1])), params[2]);
 };
 
-class RedisReplyTypeHandler : public IHandleTypeDispatch
-{
-public:
-    void OnHandleDestroy(HandleType_t type, void *object)
-    {
-        if (object) {
-            delete (RedisReply *)object;
-        }
-    }
+cell_t Redis_Set(IPluginContext* pContext, const cell_t* params) {
+	if (!isConnect()) {
+		return pContext->ThrowNativeError("Redis is not connect");
+	}
+	Set(const_cast<char*>(reinterpret_cast<char*>(params[1])), const_cast<char*>(reinterpret_cast<char*>(params[2])));
 };
 
-class AsyncRedisContextTypeHandler : public IHandleTypeDispatch
-{
-public:
-    void OnHandleDestroy(HandleType_t type, void *object)
-    {
-        if (object) {
-            delete (SMASyncRedis *)object;
-        }
-    }
+cell_t Redis_Get(IPluginContext* pContext, const cell_t* params) {
+	if (!isConnect()) {
+		return pContext->ThrowNativeError("Redis is not connect");
+	}
+	char* result = Get(const_cast<char*>(reinterpret_cast<char*>(params[1])));
+	pContext->StringToLocalUTF8(params[2], params[3], result, 0);
 };
 
-HandleType_t g_RedisCtxType = 0;
-RedisContextTypeHandler g_RedisCtxTypeHandler;
-
-HandleType_t g_RedisReplyType = 0;
-RedisReplyTypeHandler g_RedisReplyTypeHandler;
-
-HandleType_t g_AsyncRedisCtxType = 0;
-AsyncRedisContextTypeHandler g_AsyncRedisCtxTypeHandler;
-
-HiredisExt g_HiredisExt;		/**< Global singleton for extension's main interface */
-
-SMEXT_LINK(&g_HiredisExt);
-
-static void FrameHook(bool simulating)
-{
-    g_HiredisExt.RunFrame();
+cell_t Redis_Del(IPluginContext* pContext, const cell_t* params) {
+	if (!isConnect()) {
+		return pContext->ThrowNativeError("Redis is not connect");
+	}
+	Del(const_cast<char*>(reinterpret_cast<char*>(params[1])));
 }
 
-bool HiredisExt::SDK_OnLoad(char * error, size_t maxlen, bool late)
-{
-    sharesys->AddNatives(myself, g_RedisNatives);
-    sharesys->RegisterLibrary(myself, "hiredis");
+const sp_nativeinfo_t MyNatives[] = {
+	{"Redis_Connect", Redis_Connect},
+	{"Redis_Set", Redis_Set},
+	{"Redis_Get", Redis_Get},
+	{"Redis_Del", Redis_Del},
+};
 
-    g_RedisCtxType = handlesys->CreateType("RedisContext", &g_RedisCtxTypeHandler, 0, nullptr, nullptr, myself->GetIdentity(), nullptr);
-    g_RedisReplyType = handlesys->CreateType("RedisReply", &g_RedisReplyTypeHandler, 0, nullptr, nullptr, myself->GetIdentity(), nullptr);
-    g_AsyncRedisCtxType = handlesys->CreateType("AsyncRedisContext", &g_AsyncRedisCtxTypeHandler, 0, nullptr, nullptr, myself->GetIdentity(), nullptr);
-    return true;
-}
-
-void HiredisExt::SDK_OnAllLoaded()
-{
-    smutils->AddGameFrameHook(FrameHook);
-}
-
-void HiredisExt::SDK_OnUnload()
-{
-    smutils->RemoveGameFrameHook(FrameHook);
-
-    handlesys->RemoveType(g_RedisCtxType, myself->GetIdentity());
-    handlesys->RemoveType(g_RedisReplyType, myself->GetIdentity());
-    handlesys->RemoveType(g_AsyncRedisCtxType, myself->GetIdentity());
-}
-
-void HiredisExt::RequestFrame(std::function<void(void * data)> cb, void *data)
-{
-    cblist.enqueue({ cb, data });
-}
-
-void HiredisExt::RunFrame()
-{
-    if (cblist.size_approx()) {
-        std::vector<CallbackInfo> list(cblist.size_approx());
-        int n = cblist.try_dequeue_bulk(list.begin(), list.size());
-        for (int i = 0; i < n; ++i) {
-            auto[cb, data] = list[i];
-            if (cb) {
-                cb(data);
-            }
-        }
-    }
-}
-
-IdentityToken_t *HiredisExt::GetIdentity() const
-{
-    return myself->GetIdentity();
-}
+void Sample::SDK_OnAllLoaded() {
+	sharesys->AddNatives(myself, MyNatives);
+};
