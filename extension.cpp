@@ -37,35 +37,48 @@
  * @brief Implement extension code here.
  */
 
-redisContext* connect = new redisContext();
-redisReply* reply = new redisReply();
+class Redis {
+public:
+	redisContext* connect = new redisContext();
+	redisReply* reply = new redisReply();
 
-bool Connect(const char* ip, int port) {
-	connect = redisConnect(ip, port);
-	if (connect != NULL && connect->err) {
-		return false;
+	bool Connect(const char* ip, int port) {
+		connect = redisConnect(ip, port);
+		if (connect != NULL && connect->err) {
+			return false;
+		}
+		return true;
 	}
-	return true;
-}
 
-bool isConnect() {
-	return connect != NULL && !connect->err;
-}
+	bool isConnect() {
+		return connect != NULL && !connect->err;
+	}
 
-char* Get(const char* key) {
-	reply = (redisReply*)redisCommand(connect, "get '%s'", key);
-	char* str = reply->str;
-	freeReplyObject(reply);
-	return str;
-}
+	char* Get(const char* key) {
+		reply = (redisReply*)redisCommand(connect, "get '%s'", key);
+		char* str = reply->str;
+		freeReplyObject(reply);
+		return str;
+	}
 
-void* Set(const char* key, const char* value) {
-	redisCommand(connect, "set '%s' '%s'", key, value);
-}
+	void* Set(const char* key, const char* value) {
+		redisCommand(connect, "set '%s' '%s'", key, value);
+	}
+	
+	void* Del(const char* key) {
+		redisCommand(connect, "del '%s'", key);
+	}
 
-void* Del(const char* key) {
-	redisCommand(connect, "del '%s'", key);
-}
+	void* Auth(const char* pwd) {
+		redisCommand(connect, "auth '%s'", pwd);
+	}
+
+	void* Command(const char* cmd) {
+
+	}
+};
+
+Redis redis;;
 
 //Start
 
@@ -74,29 +87,43 @@ Sample g_Sample;		/**< Global singleton for extension's main interface */
 SMEXT_LINK(&g_Sample);
 
 cell_t Redis_Connect(IPluginContext* pContext, const cell_t* params) {
-	return Connect(const_cast<char*>(reinterpret_cast<char*>(params[1])), params[2]);
+	return redis.Connect(const_cast<char*>(reinterpret_cast<char*>(params[1])), params[2]);
 };
 
 cell_t Redis_Set(IPluginContext* pContext, const cell_t* params) {
-	if (!isConnect()) {
+	if (!redis.isConnect()) {
 		return pContext->ThrowNativeError("Redis is not connect");
 	}
-	Set(const_cast<char*>(reinterpret_cast<char*>(params[1])), const_cast<char*>(reinterpret_cast<char*>(params[2])));
+	redis.Set(const_cast<char*>(reinterpret_cast<char*>(params[1])), const_cast<char*>(reinterpret_cast<char*>(params[2])));
 };
 
 cell_t Redis_Get(IPluginContext* pContext, const cell_t* params) {
-	if (!isConnect()) {
+	if (!redis.isConnect()) {
 		return pContext->ThrowNativeError("Redis is not connect");
 	}
-	char* result = Get(const_cast<char*>(reinterpret_cast<char*>(params[1])));
+	char* result = redis.Get(const_cast<char*>(reinterpret_cast<char*>(params[1])));
 	pContext->StringToLocalUTF8(params[2], params[3], result, 0);
 };
 
 cell_t Redis_Del(IPluginContext* pContext, const cell_t* params) {
-	if (!isConnect()) {
+	if (!redis.isConnect()) {
 		return pContext->ThrowNativeError("Redis is not connect");
 	}
-	Del(const_cast<char*>(reinterpret_cast<char*>(params[1])));
+	redis.Del(const_cast<char*>(reinterpret_cast<char*>(params[1])));
+}
+
+cell_t Redis_Auth(IPluginContext* pContext, const cell_t* params) {
+	if (!redis.isConnect()) {
+		return pContext->ThrowNativeError("Redis is not connect");
+	}
+	redis.Auth(const_cast<char*>(reinterpret_cast<char*>(params[1])));
+}
+
+cell_t Redis_Command(IPluginContext* pContext, const cell_t* params) {
+	if (!redis.isConnect()) {
+		return pContext->ThrowNativeError("Redis is not connect");
+	}
+	redis.Command(const_cast<char*>(reinterpret_cast<char*>(params[1])));
 }
 
 const sp_nativeinfo_t MyNatives[] = {
@@ -104,6 +131,8 @@ const sp_nativeinfo_t MyNatives[] = {
 	{"Redis_Set", Redis_Set},
 	{"Redis_Get", Redis_Get},
 	{"Redis_Del", Redis_Del},
+	{"Redis_Auth", Redis_Auth},
+	{"Redis_Command", Redis_Command},
 };
 
 void Sample::SDK_OnAllLoaded() {
