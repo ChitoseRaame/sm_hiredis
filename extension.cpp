@@ -74,7 +74,7 @@ public:
 	}
 
 	void* Command(const char* cmd) {
-
+		redisCommand(connect, cmd);
 	}
 };
 
@@ -138,3 +138,7 @@ const sp_nativeinfo_t MyNatives[] = {
 void Sample::SDK_OnAllLoaded() {
 	sharesys->AddNatives(myself, MyNatives);
 };
+
+void Sample::SDK_OnUnload() {
+	delete &redis;
+}
