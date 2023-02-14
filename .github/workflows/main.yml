@@ -4,16 +4,31 @@ on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
-    name: Build
+    name: build with sm${{ matrix.sm_version }} on ${{ matrix.os_short }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        sourcemod-version: [master]
+        os:
+          - ubuntu-20.04
+          
+        sm_version:
+          - "1.10"
+          - "1.11"
+          - "latest"
+          
         include:
-          - os: ubuntu-latest
-            target-archs: x86
+          - sm_version: latest
+            sm_branch: master
+            
+          - sm_version: "1.10"
+            sm_branch: "1.10-dev"
+            
+          - sm_version: "1.11"
+            sm_branch: "1.11-dev"
+            
+          - os: ubuntu-20.04
+            os_short: linux
 
     steps:
       - name: Install Linux packages
@@ -21,8 +36,6 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt update
-          sudo dpkg --add-architecture i386
-          sudo apt-get update
           sudo apt-get install -y --no-install-recommends gcc-multilib g++-multilib 
 
       - name: Set up Python
@@ -34,12 +47,12 @@ jobs:
           path: extension
           submodules: recursive
 
-      - name: Checkout SourceMod
+      - name: Getting SourceMod ${{ matrix.sm_version }}
         uses: actions/checkout@v2
         with:
           repository: alliedmodders/sourcemod
-          ref: ${{ matrix.sourcemod-version }}
-          path: sourcemod
+          ref: ${{ matrix.sm_branch }}
+          path: sourcemod-${{ matrix.sm_version }}
           submodules: recursive
       
       - name: Checkout AMBuild
@@ -68,11 +81,11 @@ jobs:
         shell: bash
         run: |
           mkdir build && cd build
-          python ../configure.py --enable-optimize --targets=${{ matrix.target-archs }}
+          python ../configure.py --enable-optimize --targets=x86 --sm-path="${{ github.workspace }}/sourcemod-${{ matrix.sm_version }}"
           ambuild
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ runner.os }}
+          name: ${{ runner.os }}-${{ matrix.sm_version }}-${{ matrix.os_short }}
           path: extension/build/package
